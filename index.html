@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Çelik Dizilim Atölyesi</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--line:#d8dce2;--ink:#1d232b;--muted:#68717d;--accent:#2457d6;--danger:#c62828}
+*{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:#172033;color:#fff;padding:16px 18px;position:sticky;top:0;z-index:5}
+header h1{font-size:20px;margin:0 0 4px} header p{margin:0;color:#cbd3e1;font-size:13px}
+main{max-width:1250px;margin:auto;padding:14px;display:grid;grid-template-columns:360px 1fr;gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:0 2px 8px #00000008;margin-bottom:14px}
+h2{font-size:16px;margin:0 0 10px}.row{display:flex;gap:8px;align-items:center;margin:8px 0}.row>*{min-width:0}
+label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}input,select,button,textarea{font:inherit}
+input,select,textarea{width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:8px;background:#fff}
+textarea{resize:vertical;min-height:60px}
+button{border:0;border-radius:8px;padding:9px 11px;cursor:pointer;background:#e9edf3;color:#18202a;font-weight:600}
+button.primary{background:var(--accent);color:#fff}.danger{background:#fee9e9;color:var(--danger)}
+.toolgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tool{min-height:62px;border:2px solid var(--line);background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.tool.active{border-color:var(--accent);box-shadow:0 0 0 2px #2457d622}
+.small{font-size:11px;color:var(--muted);font-weight:500;margin-top:2px}
+.help{font-size:12px;color:var(--muted);line-height:1.45;margin-top:8px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.stage{overflow:auto}
+.sheet{background:#fff;border:1px solid #bfc5ce;border-radius:10px;padding:12px;min-width:max-content}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;font-size:12px;margin-bottom:12px;background:#f8f9fa;padding:10px;border-radius:8px;border:1px solid var(--line)}
+.meta div b{display:block;color:var(--muted);font-size:11px}
+table{border-collapse:collapse;background:#fff}.grid th,.grid td{border:1px solid #aeb5bf;text-align:center}
+.grid th{background:#eef1f5;font-size:11px;padding:5px;position:sticky;top:0;z-index:2}
+.grid td{width:54px;height:50px;min-width:54px;cursor:pointer;background:#fff;position:relative}
+.grid td:hover{background:#f1f5ff}
+.grid td.selected{outline:3px solid var(--accent);outline-offset:-3px}
+.rowhead{position:sticky;left:0;background:#eef1f5!important;z-index:3;width:80px;min-width:80px;font-size:11px}
+.photoBox{border:1px dashed #aeb5bf;border-radius:9px;padding:6px;min-height:80px;display:flex;align-items:center;justify-content:center;background:#fafbfc;overflow:hidden;margin-top:4px}
+.photoBox img{max-width:100%;max-height:180px;object-fit:contain}.empty{color:var(--muted);font-size:11px;text-align:center}
+.footerNote{font-size:11px;color:var(--muted);margin-top:8px}
+
+.setting-card{background:#fafbfc;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px}
+.step-card{background:#fafbfc;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:10px}
+.step-header{font-weight:600;font-size:13px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.project-item{display:flex;justify-content:space-between;align-items:center;padding:8px;border:1px solid var(--line);border-radius:6px;margin-bottom:6px;background:#fff;font-size:12px}
+
+@media(max-width:900px){main{grid-template-columns:1fr}}
+@media print{
+header,.tools,.noPrint{display:none!important} body{background:#fff} main{display:block;padding:0}.card{border:0;box-shadow:none}.sheet{border:0}
+.grid td{height:45px}.grid td,.grid th{border:1px solid #777}
+}
+
+/* --- Çelik Şekilleri --- */
+.plateType{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.plateBtn{border:2px solid var(--line);background:#fff;text-align:left}
+.plateBtn.active{border-color:var(--accent);box-shadow:0 0 0 2px #2457d622}
+.plateBtn b{display:block}.plateBtn span{font-size:11px;color:var(--muted)}
+.steelIcon{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;position:relative;vertical-align:middle}
+.steelIcon .vshape{width:22px;height:22px;border-left:4px solid currentColor;border-bottom:4px solid currentColor;transform:rotate(-45deg);border-radius:1px}
+.steelIcon .upv{width:22px;height:22px;border-left:4px solid currentColor;border-top:4px solid currentColor;transform:rotate(45deg);border-radius:1px}
+.steelIcon .line{width:24px;border-top:4px solid currentColor}
+.steelIcon .fankCylinder{width:22px;height:22px;border-left:4px solid currentColor;border-right:4px solid currentColor;border-top:4px solid currentColor}
+.steelIcon .fankCover{width:22px;height:22px;border-left:4px solid currentColor;border-right:4px solid currentColor;border-bottom:4px solid currentColor}
+</style>
+</head>
+<body>
+<header>
+  <h1>Çelik Dizilim Atölyesi</h1>
+  <p>Makine ayarları, iş emri, dizilimler, kumaş yüzleri ve proje arşivi.</p>
+</header>
+
+<main>
+<section class="card tools">
+  <h2>1. Makine, Teknik Bilgiler ve İş Emri</h2>
+  <div class="row"><div style="flex:1"><label>Makine Numarası</label><input id="machNo" placeholder="Örn: 04"></div></div>
+  <div class="row"><div style="flex:1"><label>Makine Markası</label><input id="machBrand" placeholder="Örn: Mayer, Orizio..."></div></div>
+  <div class="row"><div style="flex:1"><label>Makine Modeli</label><input id="machine" placeholder="Örn. M246"></div></div>
+  <div class="controls">
+    <div><label>Pusu</label><input id="pusu" placeholder="Örn: 30"></div>
+    <div><label>Fayn</label><input id="fayn" placeholder="Örn: 24"></div>
+  </div>
+  <div class="row" style="margin-top:8px;"><div style="flex:1"><label>İğne Sayısı</label><input id="needleCount" placeholder="Örn: 3400 iğne"></div></div>
+  
+  <!-- İş Emri Fotoğraf Alanı -->
+  <div class="setting-card" style="margin-top:10px;">
+    <label><b>İş Emri Kağıdı / Belgesi Fotoğrafı</b></label>
+    <input type="file" accept="image/*" onchange="loadJobOrderPhoto(event)">
+    <div class="photoBox" id="jobOrderImgBox"><div class="empty">İş emri fotoğrafı eklenmedi</div></div>
+  </div>
+
+  <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
+  <h2>2. Ayarlar ve Görsel Destekler</h2>
+  
+  <div class="setting-card">
+    <label><b>Alt Göbek</b></label>
+    <input id="altGobek" placeholder="Değer" style="margin-bottom:6px;">
+    <input type="file" accept="image/*" onchange="loadSettingPhoto(event, 'altGobekImg')">
+    <div class="photoBox" id="altGobekImgBox"><div class="empty">Fotoğraf yok</div></div>
+  </div>
+
+  <div class="setting-card">
+    <label><b>Üst Göbek</b></label>
+    <input id="ustGobek" placeholder="Değer" style="margin-bottom:6px;">
+    <input type="file" accept="image/*" onchange="loadSettingPhoto(event, 'ustGobekImg')">
+    <div class="photoBox" id="ustGobekImgBox"><div class="empty">Fotoğraf yok</div></div>
+  </div>
+
+  <div class="setting-card">
+    <label><b>Merkez ve May Ayarı</b></label>
+    <div class="controls">
+      <input id="merkezAyari" placeholder="Merkez">
+      <input id="mayAyari" placeholder="May">
+    </div>
+    <input type="file" accept="image/*" onchange="loadSettingPhoto(event, 'merkezMayImg')" style="margin-top:6px;">
+    <div class="photoBox" id="merkezMayImgBox"><div class="empty">Fotoğraf yok</div></div>
+  </div>
+
+  <div class="setting-card">
+    <label><b>Kasnak CM ve İplik Bilgisi</b></label>
+    <textarea id="kasnakInfo" placeholder="Örn: 24 cm - 30/1 Pamuk iplik..."></textarea>
+    <input type="file" accept="image/*" onchange="loadSettingPhoto(event, 'iplikKasnakImg')" style="margin-top:6px;">
+    <div class="photoBox" id="iplikKasnakImgBox"><div class="empty">İplik/Kasnak fotoğrafı ekle</div></div>
+  </div>
+
+  <div class="setting-card">
+    <label><b>Çektirme Ayarı ve Dişlisi</b></label>
+    <div class="controls">
+      <input id="cektirmeAyari" placeholder="Çektirme Ayarı">
+      <input id="cektirmeDislisi" placeholder="Dişli Sayısı">
+    </div>
+    <input type="file" accept="image/*" onchange="loadSettingPhoto(event, 'cektirmeImg')" style="margin-top:6px;">
+    <div class="photoBox" id="cektirmeImgBox"><div class="empty">Fotoğraf yok</div></div>
+  </div>
+
+  <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
+  <h2>3. Plaka ve Çelik Dizilimi</h2>
+  <label>Makine tipi</label>
+  <div class="plateType noPrint">
+    <button class="plateBtn active" id="singleBtn" onclick="setPlateType('single')"><b>Tek plaka</b><span>Silindir / kapak tek sıra</span></button>
+    <button class="plateBtn" id="doubleBtn" onclick="setPlateType('double')"><b>Çift plaka</b><span>2 üst + 2 alt sıra</span></button>
+  </div>
+  <div class="controls">
+    <div><label>Sıra sayısı</label><input id="rows" type="number" min="1" max="30" value="4"></div>
+    <div><label>Çelik adedi</label><input id="cols" type="number" min="1" max="80" value="8"></div>
+  </div>
+  <div class="actions noPrint">
+    <button class="primary" onclick="makeGrid()">Izgarayı oluştur</button>
+    <button onclick="clearGrid()">Temizle</button>
+  </div>
+
+  <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
+  <h2>4. Çelik Seç (5 Çeşit)</h2>
+  <div class="toolgrid noPrint" style="grid-template-columns: 1fr 1fr; gap:6px;">
+    <button class="tool active" data-symbol="-" data-name="İptal çeliği" onclick="pick(this)">
+      <div class="steelIcon"><span class="line"></span></div><div class="small">İptal çeliği</div>
+    </button>
+    <button class="tool" data-symbol="V" data-name="Süprem" onclick="pick(this)">
+      <div class="steelIcon"><span class="vshape"></span></div><div class="small">Süprem</div>
+    </button>
+    <button class="tool" data-symbol="V2" data-name="Süprem" onclick="pick(this)">
+      <div class="steelIcon"><span class="upv"></span></div><div class="small">Süprem (2)</div>
+    </button>
+    <button class="tool" data-symbol="FC" data-name="Fank — silindir" onclick="pick(this)">
+      <div class="steelIcon"><span class="fankCylinder"></span></div><div class="small">Fank (Silindir)</div>
+    </button>
+    <button class="tool" data-symbol="FK" data-name="Fank — kapak" onclick="pick(this)" style="grid-column: span 2;">
+      <div class="steelIcon"><span class="fankCover"></span></div><div class="small">Fank (Kapak)</div>
+    </button>
+  </div>
+
+  <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
+  <h2>5. Kumaş Yüzleri (Ön / Arka)</h2>
+  <div class="controls">
+    <div>
+      <label><b>Ön Yüz Fotoğrafı</b></label>
+      <input type="file" accept="image/*" onchange="loadFabricPhoto(event, 'front')">
+      <div class="photoBox" id="frontFabricBox"><div class="empty">Ön yüz yok</div></div>
+    </div>
+    <div>
+      <label><b>Arka Yüz Fotoğrafı</b></label>
+      <input type="file" accept="image/*" onchange="loadFabricPhoto(event, 'back')">
+      <div class="photoBox" id="backFabricBox"><div class="empty">Arka yüz yok</div></div>
+    </div>
+  </div>
+
+  <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
+  <h2>6. Aşamalar ve Süreç</h2>
+  <div id="stepsContainer"></div>
+  <button class="noPrint" onclick="addStep()" style="width:100%; margin-top:6px;">+ Yeni Aşama Ekle</button>
+
+  <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
+  <h2>7. Proje Arşivi ve Paylaşım</h2>
+  <div class="row" style="margin-bottom:6px;">
+    <div style="flex:1"><input id="projectSearch" placeholder="Arama yap (Makine No, Model...)" oninput="filterProjects()"></div>
+  </div>
+  <div id="projectListContainer" style="max-height:160px; overflow-y:auto; margin-bottom:8px;"></div>
+  
+  <div style="margin-bottom:8px;" class="noPrint">
+    <label style="font-size:11px; margin-bottom:2px;">Başka Yerden Gelen Projeyi Yükle:</label>
+    <input type="file" accept=".json" onchange="importProjectFile(event)">
+  </div>
+
+  <div class="actions noPrint">
+    <button class="primary" onclick="saveProject()">Projeyi Kaydet</button>
+    <button onclick="window.print()">Yazdır / PDF</button>
+  </div>
+  <p class="footerNote">Projeleri cihazlar arası paylaşabilir veya dosya olarak yedekleyebilirsiniz.</p>
+</section>
+
+<section class="card editor">
+  <div class="sheet" id="printArea">
+    <div class="meta">
+      <div><b>Makine No/Marka:</b> <span id="vMachHeader">—</span></div>
+      <div><b>Model (Pusu/Fayn):</b> <span id="vModelHeader">—</span></div>
+      <div><b>İğne Sayısı:</b> <span id="vNeedle">—</span></div>
+      <div><b>Alt / Üst Göbek:</b> <span id="vGobek">—</span></div>
+      <div><b>Merkez / May:</b> <span id="vAyarlar">—</span></div>
+      <div><b>Kasnak / İp:</b> <span id="vKasnak">—</span></div>
+      <div><b>Çektirme:</b> <span id="vCektirme">—</span></div>
+    </div>
+    
+    <!-- İş Emri Rapor Alanı -->
+    <div style="border:1px solid #d8dce2; border-radius:8px; padding:8px; margin-bottom:14px; text-align:center;" id="jobOrderViewArea">
+      <div style="font-weight:700; font-size:12px; margin-bottom:4px; color:var(--accent);">İş Emri Belgesi</div>
+      <div id="vJobOrder"><span class="empty">İş emri fotoğrafı eklenmedi</span></div>
+    </div>
+
+    <div style="font-weight:600; font-size:13px; margin-bottom:6px;">Çelik Dizilimi Tablosu</div>
+    <div class="stage" style="margin-bottom:14px;">
+      <table class="grid" id="grid"></table>
+    </div>
+
+    <!-- Kumaş Görselleri Rapor Alanı -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;" id="fabricViewArea">
+      <div style="border:1px solid #d8dce2; border-radius:8px; padding:6px; text-align:center;">
+        <div style="font-weight:700; font-size:11px; margin-bottom:4px;">Kumaş Ön Yüz</div>
+        <div id="vFrontFabric"><span class="empty">Fotoğraf yok</span></div>
+      </div>
+      <div style="border:1px solid #d8dce2; border-radius:8px; padding:6px; text-align:center;">
+        <div style="font-weight:700; font-size:11px; margin-bottom:4px;">Kumaş Arka Yüz</div>
+        <div id="vBackFabric"><span class="empty">Fotoğraf yok</span></div>
+      </div>
+    </div>
+
+    <div style="font-weight:600; font-size:13px; margin-bottom:6px; border-top:1px solid var(--line); padding-top:10px;">Aşamalar ve Süreç Takibi</div>
+    <div id="viewStepsContainer"></div>
+  </div>
+</section>
+</main>
+
+<script>
+let selectedSymbol='-';
+let selectedName='İptal çeliği';
+let plateType='single';
+let stepsData = [];
+let jobOrderPhoto = '';
+let settingPhotos = { altGobekImg:'', ustGobekImg:'', merkezMayImg:'', iplikKasnakImg:'', cektirmeImg:'' };
+let fabricPhotos = { front:'', back:'' };
+
+function setPlateType(type){
+  plateType=type;
+  document.getElementById('singleBtn').classList.toggle('active',type==='single');
+  document.getElementById('doubleBtn').classList.toggle('active',type==='double');
+  const rows=document.getElementById('rows');
+  if(type==='double' && +rows.value<4) rows.value=4;
+  makeGrid();
+}
+function pick(btn){
+  document.querySelectorAll('.tool').forEach(x=>x.classList.remove('active'));
+  btn.classList.add('active');
+  selectedSymbol=btn.dataset.symbol;
+  selectedName=btn.dataset.name;
+}
+function rowLabel(i){
+  if(plateType==='double'){
+    return ['Silindir üst','Silindir alt','Kapak üst','Kapak alt'][i-1] || ('Sıra '+i);
+  }
+  return ['Silindir','Kapak'][i-1] || ('Sıra '+i);
+}
+function iconHtml(sym){
+  if(sym==='-') return '<span class="steelIcon"><span class="line"></span></span>';
+  if(sym==='V') return '<span class="steelIcon"><span class="vshape"></span></span>';
+  if(sym==='V2') return '<span class="steelIcon"><span class="upv"></span></span>';
+  if(sym==='FC') return '<span class="steelIcon"><span class="fankCylinder"></span></span>';
+  if(sym==='FK') return '<span class="steelIcon"><span class="fankCover"></span></span>';
+  return '<span class="steelIcon" style="font-size:20px">'+sym+'</span>';
+}
+function makeGrid(){
+  const r=plateType==='double'?4:Math.max(1,Math.min(30,+document.getElementById('rows').value||2));
+  const c=Math.max(1,Math.min(80,+document.getElementById('cols').value||1));
+  document.getElementById('rows').value=r;
+  document.getElementById('cols').value=c;
+  const t=document.getElementById('grid'); t.innerHTML='';
+  let h='<thead><tr><th class="rowhead">Plaka / sıra</th>';
+  for(let j=1;j<=c;j++)h+='<th>'+j+'</th>'; h+='</tr></thead><tbody>';
+  for(let i=1;i<=r;i++){
+    h+='<tr><th class="rowhead">'+rowLabel(i)+'</th>';
+    for(let j=1;j<=c;j++)h+='<td data-r="'+i+'" data-c="'+j+'" data-symbol="-" data-name="İptal çeliği" onclick="cellClick(this)">'+iconHtml('-')+'</td>';
+    h+='</tr>';
+  }
+  h+='</tbody>'; t.innerHTML=h;
+  updateMetaViews();
+}
+function cellClick(td){
+  td.innerHTML=iconHtml(selectedSymbol);
+  td.dataset.name=selectedName; td.dataset.symbol=selectedSymbol;
+  document.querySelectorAll('.grid td').forEach(x=>x.classList.remove('selected'));
+  td.classList.add('selected');
+}
+
+function updateMetaViews(){
+  const no = document.getElementById('machNo').value || '—';
+  const brand = document.getElementById('machBrand').value || '';
+  const model = document.getElementById('machine').value || '—';
+  const pusu = document.getElementById('pusu').value || '?';
+  const fayn = document.getElementById('fayn').value || '?';
+
+  document.getElementById('vMachHeader').textContent = no + (brand ? ' / ' + brand : '');
+  document.getElementById('vModelHeader').textContent = model + ' (P:' + pusu + ' / F:' + fayn + ')';
+  document.getElementById('vNeedle').textContent = document.getElementById('needleCount').value || '—';
+  document.getElementById('vGobek').textContent = (document.getElementById('altGobek').value || '—') + ' / ' + (document.getElementById('ustGobek').value || '—');
+  document.getElementById('vAyarlar').textContent = (document.getElementById('merkezAyari').value || '—') + ' / ' + (document.getElementById('mayAyari').value || '—');
+  document.getElementById('vKasnak').textContent = document.getElementById('kasnakInfo').value || '—';
+  document.getElementById('vCektirme').textContent = (document.getElementById('cektirmeAyari').value || '—') + ' (Diş: ' + (document.getElementById('cektirmeDislisi').value || '—') + ')';
+}
+
+['machNo','machBrand','machine','pusu','fayn','needleCount','altGobek','ustGobek','merkezAyari','mayAyari','kasnakInfo','cektirmeAyari','cektirmeDislisi'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', updateMetaViews);
+});
+
+function loadJobOrderPhoto(e){
+  const f = e.target.files[0]; if(!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    jobOrderPhoto = reader.result;
+    document.getElementById('jobOrderImgBox').innerHTML = '<img src="'+reader.result+'">';
+    renderJobOrderView();
+  };
+  reader.readAsDataURL(f);
+}
+
+function renderJobOrderView(){
+  const box = document.getElementById('vJobOrder');
+  box.innerHTML = jobOrderPhoto ? '<img src="'+jobOrderPhoto+'" style="max-height:180px; max-width:100%; border-radius:4px;">' : '<span class="empty">İş emri fotoğrafı eklenmedi</span>';
+}
+
+function loadSettingPhoto(e, key){
+  const f = e.target.files[0]; if(!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    settingPhotos[key] = reader.result;
+    document.getElementById(key+'Box').innerHTML = '<img src="'+reader.result+'">';
+  };
+  reader.readAsDataURL(f);
+}
+
+function loadFabricPhoto(e, type){
+  const f = e.target.files[0]; if(!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    fabricPhotos[type] = reader.result;
+    document.getElementById(type+'FabricBox').innerHTML = '<img src="'+reader.result+'">';
+    renderFabricViews();
+  };
+  reader.readAsDataURL(f);
+}
+
+function renderFabricViews(){
+  document.getElementById('vFrontFabric').innerHTML = fabricPhotos.front ? '<img src="'+fabricPhotos.front+'" style="max-height:140px; max-width:100%; border-radius:4px;">' : '<span class="empty">Fotoğraf yok</span>';
+  document.getElementById('vBackFabric').innerHTML = fabricPhotos.back ? '<img src="'+fabricPhotos.back+'" style="max-height:140px; max-width:100%; border-radius:4px;">' : '<span class="empty">Fotoğraf yok</span>';
+}
+
+// Aşamalar
+function addStep(title='', desc='', img=''){
+  stepsData.push({title, desc, img});
+  renderSteps();
+}
+function removeStep(index){
+  stepsData.splice(index, 1);
+  renderSteps();
+}
+function renderSteps(){
+  const container = document.getElementById('stepsContainer');
+  container.innerHTML = '';
+  stepsData.forEach((st, idx) => {
+    const div = document.createElement('div');
+    div.className = 'step-card';
+    div.innerHTML = `
+      <div class="step-header"><span>Aşama #${idx+1}</span> <button class="danger" onclick="removeStep(${idx})">Sil</button></div>
+      <label>Aşama Başlığı</label>
+      <input type="text" value="${st.title}" oninput="stepsData[${idx}].title=this.value; renderViewStepsOnly()" placeholder="Örn: İğne değişimi">
+      <label style="margin-top:6px;">Açıklama</label>
+      <textarea oninput="stepsData[${idx}].desc=this.value; renderViewStepsOnly()">${st.desc}</textarea>
+      <label style="margin-top:6px;">Fotoğraf</label>
+      <input type="file" accept="image/*" onchange="loadStepPhoto(event, ${idx})">
+      <div class="photoBox">${st.img ? '<img src="'+st.img+'">' : '<div class="empty">Fotoğraf yok</div>'}</div>
+    `;
+    container.appendChild(div);
+  });
+  renderViewStepsOnly();
+}
+
+function loadStepPhoto(e, idx){
+  const f = e.target.files[0]; if(!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    stepsData[idx].img = reader.result;
+    renderSteps();
+  };
+  reader.readAsDataURL(f);
+}
+
+function renderViewStepsOnly(){
+  const viewContainer = document.getElementById('viewStepsContainer');
+  viewContainer.innerHTML = '';
+  stepsData.forEach((st, idx) => {
+    const vdiv = document.createElement('div');
+    vdiv.style.cssText = "border:1px solid #d8dce2; border-radius:8px; padding:8px; margin-bottom:8px; background:#fff;";
+    vdiv.innerHTML = `
+      <div style="font-weight:700; font-size:12px; color:var(--accent);">Aşama #${idx+1}: ${st.title || 'İsimsiz'}</div>
+      <div style="font-size:12px; margin:4px 0; white-space:pre-wrap;">${st.desc || ''}</div>
+      ${st.img ? '<div style="margin-top:6px; text-align:center;"><img src="'+st.img+'" style="max-height:180px; max-width:100%; border-radius:6px;"></div>' : ''}
+    `;
+    viewContainer.appendChild(vdiv);
+  });
+}
+
+function clearGrid(){ makeGrid(); }
+
+// Proje Arşivi ve Paylaşım Sistemi
+function getProjectsArchive(){
+  try { return JSON.parse(localStorage.getItem('celikAtolyeArchive') || '{}'); } catch(e){ return {}; }
+}
+
+function saveProject(){
+  const no = document.getElementById('machNo').value || 'İsimsiz';
+  const model = document.getElementById('machine').value || 'Model yok';
+  const keyName = 'Makine ' + no + ' - ' + model + ' (' + new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + ')';
+  
+  const cells=[...document.querySelectorAll('#grid td')].map(td=>({r:+td.dataset.r,c:+td.dataset.c,s:td.dataset.symbol||'-',n:td.dataset.name||'İptal çeliği'}));
+  const projectObj = {
+    keyName,
+    machNo: document.getElementById('machNo').value,
+    machBrand: document.getElementById('machBrand').value,
+    machine: document.getElementById('machine').value,
+    pusu: document.getElementById('pusu').value,
+    fayn: document.getElementById('fayn').value,
+    needleCount: document.getElementById('needleCount').value,
+    jobOrderPhoto,
+    altGobek: document.getElementById('altGobek').value,
+    ustGobek: document.getElementById('ustGobek').value,
+    merkezAyari: document.getElementById('merkezAyari').value,
+    mayAyari: document.getElementById('mayAyari').value,
+    kasnakInfo: document.getElementById('kasnakInfo').value,
+    cektirmeAyari: document.getElementById('cektirmeAyari').value,
+    cektirmeDislisi: document.getElementById('cektirmeDislisi').value,
+    plateType, rows:+document.getElementById('rows').value, cols:+document.getElementById('cols').value,
+    cells, stepsData, settingPhotos, fabricPhotos
+  };
+
+  let archive = getProjectsArchive();
+  archive[keyName] = projectObj;
+  localStorage.setItem('celikAtolyeArchive', JSON.stringify(archive));
+  renderProjectList();
+  alert('Proje arşive başarıyla kaydedildi.');
+}
+
+function renderProjectList(filter=''){
+  const container = document.getElementById('projectListContainer');
+  container.innerHTML = '';
+  let archive = getProjectsArchive();
+  let keys = Object.keys(archive);
+  
+  if(keys.length === 0){
+    container.innerHTML = '<div class="empty" style="padding:10px;">Henüz kayıtlı proje yok.</div>';
+    return;
+  }
+
+  keys.forEach(k => {
+    if(filter && !k.toLowerCase().includes(filter.toLowerCase())) return;
+    let item = document.createElement('div');
+    item.className = 'project-item';
+    item.innerHTML = `
+      <span style="font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px;" title="${k}">${k}</span>
+      <div style="display:flex; gap:3px;">
+        <button class="primary" onclick="loadProjectKey('${k.replace(/'/g, "\\'")}')" style="padding:3px 6px; font-size:10px;">Aç</button>
+        <button onclick="shareProjectKey('${k.replace(/'/g, "\\'")}')" style="padding:3px 6px; font-size:10px; background:#28a745; color:#fff;" title="Paylaş">Paylaş</button>
+        <button class="danger" onclick="deleteProjectKey('${k.replace(/'/g, "\\'")}')" style="padding:3px 6px; font-size:10px;">Sil</button>
+      </div>
+    `;
+    container.appendChild(item);
+  });
+}
+
+function filterProjects(){
+  let query = document.getElementById('projectSearch').value;
+  renderProjectList(query);
+}
+
+function loadProjectKey(key){
+  let archive = getProjectsArchive();
+  let p = archive[key];
+  if(!p) return;
+
+  document.getElementById('machNo').value = p.machNo || '';
+  document.getElementById('machBrand').value = p.machBrand || '';
+  document.getElementById('machine').value = p.machine || '';
+  document.getElementById('pusu').value = p.pusu || '';
+  document.getElementById('fayn').value = p.fayn || '';
+  document.getElementById('needleCount').value = p.needleCount || '';
+  
+  jobOrderPhoto = p.jobOrderPhoto || '';
+  document.getElementById('jobOrderImgBox').innerHTML = jobOrderPhoto ? '<img src="'+jobOrderPhoto+'">' : '<div class="empty">İş emri fotoğrafı eklenmedi</div>';
+  renderJobOrderView();
+
+  document.getElementById('altGobek').value = p.altGobek || '';
+  document.getElementById('ustGobek').value = p.ustGobek || '';
+  document.getElementById('merkezAyari').value = p.merkezAyari || '';
+  document.getElementById('mayAyari').value = p.mayAyari || '';
+  document.getElementById('kasnakInfo').value = p.kasnakInfo || '';
+  document.getElementById('cektirmeAyari').value = p.cektirmeAyari || '';
+  document.getElementById('cektirmeDislisi').value = p.cektirmeDislisi || '';
+
+  plateType = p.plateType || 'single';
+  document.getElementById('rows').value = p.rows || 4;
+  document.getElementById('cols').value = p.cols || 8;
+  document.getElementById('singleBtn').classList.toggle('active', plateType==='single');
+  document.getElementById('doubleBtn').classList.toggle('active', plateType==='double');
+  makeGrid();
+
+  (p.cells||[]).forEach(x=>{
+    const td=document.querySelector('#grid td[data-r="'+x.r+'"][data-c="'+x.c+'"]');
+    if(td){td.dataset.symbol=x.s;td.dataset.name=x.n;td.innerHTML=iconHtml(x.s);}
+  });
+
+  stepsData = p.stepsData || [];
+  renderSteps();
+
+  settingPhotos = p.settingPhotos || { altGobekImg:'', ustGobekImg:'', merkezMayImg:'', iplikKasnakImg:'', cektirmeImg:'' };
+  Object.keys(settingPhotos).forEach(sk => {
+    let box = document.getElementById(sk+'Box');
+    if(box) {
+      box.innerHTML = settingPhotos[sk] ? '<img src="'+settingPhotos[sk]+'">' : '<div class="empty">Fotoğraf yok</div>';
+    }
+  });
+
+  fabricPhotos = p.fabricPhotos || { front:'', back:'' };
+  document.getElementById('frontFabricBox').innerHTML = fabricPhotos.front ? '<img src="'+fabricPhotos.front+'">' : '<span class="empty">Ön yüz yok</span>';
+  document.getElementById('backFabricBox').innerHTML = fabricPhotos.back ? '<img src="'+fabricPhotos.back+'">' : '<span class="empty">Arka yüz yok</span>';
+  renderFabricViews();
+
+  updateMetaViews();
+  alert('Proje yüklendi: ' + key);
+}
+
+// Projeyi Dosya Olarak Paylaşma
+function shareProjectKey(key){
+  let archive = getProjectsArchive();
+  let p = archive[key];
+  if(!p) return;
+
+  let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(p));
+  let downloadAnchor = document.createElement('a');
+  downloadAnchor.setAttribute("href", dataStr);
+  downloadAnchor.setAttribute("download", (p.machNo ? "Makine_" + p.machNo : "Celikk_Proje") + ".json");
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+}
+
+// İçe Aktarma
+function importProjectFile(e){
+  let file = e.target.files[0];
+  if(!file) return;
+
+  let reader = new FileReader();
+  reader.onload = function(event) {
+    try {
+      let importedProj = JSON.parse(event.target.result);
+      let kName = importedProj.keyName || ('İçe Aktarılan ' + new Date().toLocaleDateString());
+      
+      let archive = getProjectsArchive();
+      archive[kName] = importedProj;
+      localStorage.setItem('celikAtolyeArchive', JSON.stringify(archive));
+      
+      renderProjectList();
+      alert('Proje başarıyla içe aktarıldı ve arşive eklendi!');
+    } catch(err) {
+      alert('Geçersiz proje dosyası!');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function deleteProjectKey(key){
+  if(!confirm(key + ' silinsin mi?')) return;
+  let archive = getProjectsArchive();
+  delete archive[key];
+  localStorage.setItem('celikAtolyeArchive', JSON.stringify(archive));
+  renderProjectList();
+}
+
+makeGrid();
+renderProjectList();
+</script>
+</body>
+</html>
